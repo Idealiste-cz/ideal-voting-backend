@@ -24,10 +24,10 @@ object Main extends App {
     Router("/v1" -> serviceV1).orNotFound
   }
 
-  val server: ZManaged[Any, Throwable, Server[Task]] = {
+  val server: TaskManaged[Server[Task]] = {
 
     for {
-      server <- ZManaged.runtime.flatMap { implicit r: Runtime[Any] =>
+      server <- Managed.runtime.flatMap { implicit r: Runtime[Any] =>
         import zio.interop.catz.implicits._
         BlazeServerBuilder[Task](r.platform.executor.asEC)
           .bindHttp(8080, "localhost")
