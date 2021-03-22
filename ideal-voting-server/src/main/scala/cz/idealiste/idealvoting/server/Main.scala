@@ -1,11 +1,11 @@
 package cz.idealiste.idealvoting.server
 
 import cats.data.Kleisli
+import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server._
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s._
 import zio._
 import zio.interop.catz._
 
