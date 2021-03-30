@@ -9,7 +9,6 @@ import org.http4s._
 import org.http4s.implicits._
 import zio._
 import zio.blocking.Blocking
-import zio.console.Console
 import zio.interop.catz._
 import zio.test.Assertion._
 import zio.test._
@@ -17,7 +16,7 @@ import zio.test.environment.TestEnvironment
 
 object MainSpec extends DefaultRunnableSpec {
 
-  private val makeApp: RManaged[Blocking with Console with DockerCompose, HttpApp[EnvTask]] = for {
+  private val makeApp: RManaged[Blocking with DockerCompose, HttpApp[EnvTask]] = for {
     dc <- Managed.service[DockerComposeContainer]
     url = show"jdbc:mysql://${dc.getServiceHost("mariadb", 3306)}:${dc.getServicePort("mariadb", 3306)}/idealvoting"
     db <- Db.make(Config.Db(url, "idealvoting", "idealvoting"))
