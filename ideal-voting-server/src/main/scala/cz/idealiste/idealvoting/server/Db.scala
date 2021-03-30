@@ -12,6 +12,8 @@ import liquibase.resource.ClassLoaderResourceAccessor
 import liquibase.{Contexts, Liquibase}
 import zio._
 import zio.blocking._
+import zio.console.Console
+import zio.console.putStrLn
 import zio.interop.catz._
 
 import java.sql.Connection
@@ -83,15 +85,17 @@ class Db(transactor: Transactor[Task]) {
 
 object Db {
 
-  private def runMigration(connection: Connection, changeLogFile: String): Unit = {
+  private def runMigration(connection: Connection, changeLogFile: String): String = {
     val database = DatabaseFactory
       .getInstance()
       .findCorrectDatabaseImplementation(new JdbcConnection(connection))
     val liquibase = new Liquibase(changeLogFile, new ClassLoaderResourceAccessor(), database)
-    liquibase.update(new Contexts())
+    val writer = new java.io.StringWriter
+    liquibase.update(new Contexts(), writer)
+    writer.toString
   }
 
-  private def migrate(transactor: Transactor[Task], changeLogFile: String): RIO[Blocking, Unit] = {
+  private def migrate(transactor: Transactor[Task], changeLogFile: String): RIO[Blocking, String] = {
     transactor.connect(transactor.kernel).toManagedZIO.use { connection =>
       effectBlocking {
         runMigration(connection, changeLogFile)
@@ -99,14 +103,16 @@ object Db {
     }
   }
 
-  def make(config: Config.Db): RManaged[Blocking, Db] = Managed.runtime.flatMap { implicit r: Runtime[Any] =>
-    for {
-      ce <- ExecutionContexts.fixedThreadPool[Task](config.threadPoolSize).toManagedZIO
-      be <- Blocker[Task].toManagedZIO
-      transactor <- HikariTransactor
-        .newHikariTransactor[Task](config.driverClassName, config.url, config.user, config.password, ce, be)
-        .toManagedZIO
-      _ <- migrate(transactor, config.changeLogFile).toManaged_
-    } yield new Db(transactor)
+  def make(config: Config.Db): RManaged[Blocking with Console, Db] = Managed.runtime.flatMap {
+    implicit r: Runtime[Any] =>
+      for {
+        ce <- ExecutionContexts.fixedThreadPool[Task](config.threadPoolSize).toManagedZIO
+        be <- Blocker[Task].toManagedZIO
+        transactor <- HikariTransactor
+          .newHikariTransactor[Task](config.driverClassName, config.url, config.user, config.password, ce, be)
+          .toManagedZIO
+        log <- migrate(transactor, config.changeLogFile).toManaged_
+        _ <- putStrLn(log).toManaged_
+      } yield new Db(transactor)
   }
 }
