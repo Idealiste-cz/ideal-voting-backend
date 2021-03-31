@@ -5,8 +5,8 @@ import com.dimafeng.testcontainers.DockerComposeContainer
 import cz.idealiste.idealvoting.server.Http._
 import cz.idealiste.idealvoting.server.TestContainer.DockerCompose
 import org.http4s
-import org.http4s.{Method, Request, Uri}
 import org.http4s.implicits._
+import org.http4s.{Method, Request, Uri}
 import zio._
 import zio.blocking.Blocking
 import zio.interop.catz._

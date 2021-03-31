@@ -2,8 +2,8 @@ package cz.idealiste.idealvoting.server
 
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeServerBuilder
-import zio.interop.catz._
 import zio._
+import zio.interop.catz._
 
 object HttpServer {
 

@@ -4,9 +4,9 @@ import cats.implicits._
 import cz.idealiste.idealvoting.server.Voting._
 import emil.MailAddress
 import org.apache.commons.lang3.StringUtils
+import zio._
 import zio.interop.catz.core._
 import zio.random.Random
-import zio._
 
 class Voting(config: Config.Voting, db: Db, random: Random.Service) {
 
