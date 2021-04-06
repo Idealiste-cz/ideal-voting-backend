@@ -11,6 +11,7 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 import zio.test.environment.TestEnvironment
+import zio.magic._
 
 object MainSpec extends DefaultRunnableSpec {
 
@@ -75,10 +76,10 @@ object MainSpec extends DefaultRunnableSpec {
       },
     ).provideSomeLayerShared[TestEnvironment](testLayer.orDie) @@ sequential
 
-  lazy val testLayer: RLayer[Blocking with Random, Has[Http]] = (
-    ZLayer.identity[Blocking] ++
-      ZLayer.identity[Random] ++ (
-        (Config.layer ++ (ZLayer.identity[Blocking] >>> TestContainer.dockerCompose)) >>> TestContainer.config
-      )
-  ) >>> Main.httpLayer
+  lazy val testLayer: RLayer[Blocking with Random, Has[Http]] =
+    ZLayer.fromSomeMagic[Blocking with Random, Has[Http]](
+      TestContainer.dockerCompose,
+      TestContainer.config,
+      Main.httpLayer,
+    )
 }

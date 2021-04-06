@@ -26,16 +26,17 @@ object TestContainer {
       .toLayer
   }
 
-  lazy val config: URLayer[Has[Config] with Has[DockerComposeContainer], Has[Config]] = (
-    for {
-      config0 <- ZIO.service[Config]
-      docker <- ZIO.service[DockerComposeContainer]
-      config = config0.copy(dbTransactor =
-        config0.dbTransactor.copy(
-          url =
-            show"jdbc:mysql://${docker.getServiceHost("mariadb_1", 3306)}:${docker.getServicePort("mariadb_1", 3306)}/idealvoting",
-        ),
-      )
-    } yield config
-  ).toLayer
+  lazy val config: URLayer[Has[DockerComposeContainer], Has[Config]] = Config.layer.build.flatMap {
+    hasConfig =>
+      val config0 = hasConfig.get
+      for {
+        docker <- Managed.service[DockerComposeContainer]
+        config = config0.copy(dbTransactor =
+          config0.dbTransactor.copy(
+            url =
+              show"jdbc:mysql://${docker.getServiceHost("mariadb_1", 3306)}:${docker.getServicePort("mariadb_1", 3306)}/idealvoting",
+          ),
+        )
+      } yield config
+  }.toLayer
 }
