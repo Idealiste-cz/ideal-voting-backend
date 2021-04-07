@@ -82,7 +82,7 @@ class Http(voting: Voting) {
 object Http {
 
   implicit lazy val emailDecoder: Decoder[MailAddress] = {
-    case class MailAddressStructure(name: Option[String], address: String)
+    final case class MailAddressStructure(name: Option[String], address: String)
     Decoder[String]
       .emap(MailAddress.parse)
       .or(deriveDecoder[MailAddressStructure].emap(s => MailAddress.parseAddressAndName(s.name, s.address)))

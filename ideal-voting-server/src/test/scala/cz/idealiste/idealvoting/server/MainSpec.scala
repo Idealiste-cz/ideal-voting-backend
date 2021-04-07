@@ -2,8 +2,10 @@ package cz.idealiste.idealvoting.server
 
 import cz.idealiste.idealvoting.server.Http._
 import emil.MailAddress
+import emil.javamail.syntax._
+import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 import org.http4s.implicits._
-import org.http4s.{EntityEncoder, Method, Request, Status, Uri}
+import org.http4s.{Method, Request, Status, Uri}
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
@@ -13,12 +15,10 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 import zio.test.environment.TestEnvironment
-import emil.javamail.syntax._
-import io.circe.Encoder
-import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 
 object MainSpec extends DefaultRunnableSpec {
 
+  @SuppressWarnings(Array("DisableSyntax.throw"))
   private def email(string: String): MailAddress =
     MailAddress.parseValidated(string).fold(e => throw e.head, m => m)
 
