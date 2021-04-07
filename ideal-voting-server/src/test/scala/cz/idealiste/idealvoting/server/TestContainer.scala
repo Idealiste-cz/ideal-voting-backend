@@ -10,7 +10,7 @@ import java.io.File
 
 object TestContainer {
 
-  lazy val dockerCompose: URLayer[Blocking, Has[DockerComposeContainer]] = {
+  lazy val dockerCompose: RLayer[Blocking, Has[DockerComposeContainer]] = {
     val container = new DockerComposeContainer(
       new File("docker-compose.yml"),
       List(
@@ -20,7 +20,7 @@ object TestContainer {
       ),
     )
     ZManaged
-      .make(effectBlocking(container.start()).as(container).orDie)(container =>
+      .make(effectBlocking(container.start()).as(container))(container =>
         effectBlocking(container.stop()).orDie,
       )
       .toLayer
