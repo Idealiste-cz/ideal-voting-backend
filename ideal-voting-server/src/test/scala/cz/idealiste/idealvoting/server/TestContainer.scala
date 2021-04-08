@@ -36,6 +36,7 @@ object TestContainer {
             show"jdbc:mysql://${docker.getServiceHost("mariadb_1", 3306)}:${docker.getServicePort("mariadb_1", 3306)}/idealvoting",
         ),
       )
+      _ = println(config)
     } yield config
   ).toLayer
 }

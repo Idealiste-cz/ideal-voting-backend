@@ -89,11 +89,11 @@ object MainSpec extends DefaultRunnableSpec {
             ),
         )
       },
-    ).provideSomeLayerShared[Blocking with Clock with Random](testLayer.orDie) @@ sequential
+    ).provideSomeLayerShared[Blocking with Random](testLayer.orDie) @@ sequential
 
-  lazy val testLayer: RLayer[Blocking with Clock with Random, Has[Http]] = (
+  lazy val testLayer: RLayer[Blocking with Random, Has[Http]] = (
     ZLayer.identity[Blocking] ++
-      ZLayer.identity[Clock] ++
+      Clock.live ++
       ZLayer.identity[Random] ++ (
         (Config.layer ++ (ZLayer.identity[Blocking] >>> TestContainer.dockerCompose)) >>> TestContainer.config
       )
