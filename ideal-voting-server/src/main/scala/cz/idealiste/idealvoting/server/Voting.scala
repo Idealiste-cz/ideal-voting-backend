@@ -148,9 +148,9 @@ object Voting {
 
   sealed abstract class InvalidVote(val message: String) extends Exception(message) with CastVoteResult
   object InvalidVote {
-    case class UnavailableOptions(unavailable: NonEmptySet[Int])
+    final case class UnavailableOptions(unavailable: NonEmptySet[Int])
         extends InvalidVote(s"Preferences contain options that are not available: $unavailable")
-    case class DuplicateOptions(duplicities: NonEmptyList[Int])
+    final case class DuplicateOptions(duplicities: NonEmptyList[Int])
         extends InvalidVote(s"Preferences contain duplicate options: $duplicities")
   }
 

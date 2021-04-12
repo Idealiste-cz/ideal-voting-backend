@@ -1,5 +1,6 @@
 package cz.idealiste.idealvoting.server
 
+import cats.implicits._
 import cz.idealiste.idealvoting.server.Http._
 import emil.MailAddress
 import emil.javamail.syntax._
@@ -48,7 +49,10 @@ object MainSpec extends DefaultRunnableSpec {
               Request(
                 method = Method.GET,
                 uri = Uri.unsafeFromString(
-                  response.links.find(l => l.method == Method.GET && l.rel == "election-view-admin").get.href,
+                  response.links
+                    .find(l => l.method === Method.GET && l.rel === "election-view-admin")
+                    .get
+                    .href,
                 ),
               ),
             )
@@ -127,7 +131,7 @@ object MainSpec extends DefaultRunnableSpec {
                   method = Method.GET,
                   uri = Uri.unsafeFromString(
                     responseCreate.links
-                      .find(l => l.method == Method.GET && l.rel == "election-view-admin")
+                      .find(l => l.method === Method.GET && l.rel === "election-view-admin")
                       .get
                       .href,
                   ),

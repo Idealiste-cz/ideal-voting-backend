@@ -13,7 +13,7 @@ import zio.interop.catz._
 
 class Db(transactor: Transactor[Task]) {
 
-  implicit val han = LogHandler.jdkLogHandler
+  private implicit val han: LogHandler = LogHandler.jdkLogHandler
 
   private implicit lazy val mailAddressRead: Read[MailAddress] = mailAddressMulicolumnRead
   private implicit lazy val mailAddressWrite: Write[MailAddress] = mailAddressMulicolumnWrite
@@ -41,6 +41,7 @@ class Db(transactor: Transactor[Task]) {
     commands.transact(transactor)
   }
 
+  @SuppressWarnings(Array("DisableSyntax.throw"))
   def readElection(token: String): Task[Option[Election]] = {
     val commands = for {
       electionMetadataAndAdmin <-
@@ -84,6 +85,7 @@ class Db(transactor: Transactor[Task]) {
     commands.transact(transactor)
   }
 
+  @SuppressWarnings(Array("DisableSyntax.throw"))
   def readElectionAdmin(token: String): Task[Option[Election]] = {
     val commands = for {
       electionMetadataAndAdmin <-
