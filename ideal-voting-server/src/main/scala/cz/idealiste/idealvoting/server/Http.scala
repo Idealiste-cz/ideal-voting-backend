@@ -13,8 +13,8 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.{EntityDecoder, EntityEncoder, HttpApp, HttpRoutes, Method}
-import zio.interop.catz._
 import zio._
+import zio.interop.catz._
 
 class Http(voting: Voting) {
 
