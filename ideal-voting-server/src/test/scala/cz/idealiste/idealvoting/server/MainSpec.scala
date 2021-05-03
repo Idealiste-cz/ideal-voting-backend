@@ -9,10 +9,10 @@ import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 import org.http4s.implicits._
 import org.http4s.{Method, Request, Status, Uri}
 import zio._
-import zio.magic._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.interop.catz._
+import zio.magic._
 import zio.random.Random
 import zio.test.Assertion._
 import zio.test.TestAspect._
