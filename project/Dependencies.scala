@@ -14,7 +14,7 @@ object Dependencies {
     val mariadb = "2.7.3"
     val snakeyaml = "1.28"
     val zio = "1.0.8"
-    val zioCats = "2.5.1.0"
+    val zioCats = "3.1.1.0"
     val zioConfig = "1.0.6"
     val zioMagic = "0.3.2"
 
