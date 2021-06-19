@@ -4,8 +4,8 @@ import zio._
 import zio.config._
 import zio.config.magnolia.DeriveConfigDescriptor
 import zio.config.typesafe._
-import zio.system.System
 import zio.doobie.liquibase._
+import zio.system.System
 
 final case class Config(
     dbTransactor: ZIODoobieLiquibase.Config,
