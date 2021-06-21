@@ -12,13 +12,13 @@ object Dependencies {
     val mariadb = "2.7.3"
     val snakeyaml = "1.29"
     val zio = "1.0.9"
-    val zioDoobie = "0.0.3"
-    val zioCats = "3.1.1.0"
+    val zioDoobie = "0.0.4"
+    val zioCats = "2.5.1.0"
     val zioConfig = "1.0.6"
     val zioMagic = "0.3.3"
 
     // Test
-    val zioTestcontainers = "0.2.0"
+    val zioTestcontainers = "0.2.2"
 
     // Scalafix plugins
     val zioMagicComments = "0.1.0"
