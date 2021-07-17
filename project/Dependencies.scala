@@ -12,9 +12,9 @@ object Dependencies {
     val mariadb = "2.7.3"
     val snakeyaml = "1.29"
     val zio = "1.0.9"
-    val zioDoobie = "0.0.4"
     val zioCats = "2.5.1.0"
     val zioConfig = "1.0.6"
+    val zioDoobie = "0.0.4"
     val zioMagic = "0.3.6"
 
     // Test
@@ -34,10 +34,10 @@ object Dependencies {
   val mariadb = "org.mariadb.jdbc" % "mariadb-java-client" % Versions.mariadb
   val snakeyaml = "org.yaml" % "snakeyaml" % Versions.snakeyaml
   val zio = "dev.zio" %% "zio" % Versions.zio
-  val zioDoobieLiquibase = "com.github.sideeffffect" %% "zio-doobie-liquibase" % Versions.zioDoobie
   val zioCats = "dev.zio" %% "zio-interop-cats" % Versions.zioCats
   val zioConfig = "dev.zio" %% "zio-config-typesafe" % Versions.zioConfig
   val zioConfigMagnolia = "dev.zio" %% "zio-config-magnolia" % Versions.zioConfig
+  val zioDoobieLiquibase = "com.github.sideeffffect" %% "zio-doobie-liquibase" % Versions.zioDoobie
   val zioMagic = "io.github.kitlangton" %% "zio-magic" % Versions.zioMagic
   val zioTest = "dev.zio" %% "zio-test" % Versions.zio
   val zioTestSbt = "dev.zio" %% "zio-test-sbt" % Versions.zio

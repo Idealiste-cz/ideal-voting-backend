@@ -24,10 +24,10 @@ lazy val server = project
       Dependencies.mariadb,
       Dependencies.snakeyaml,
       Dependencies.zio,
-      Dependencies.zioDoobieLiquibase,
       Dependencies.zioCats,
       Dependencies.zioConfig,
       Dependencies.zioConfigMagnolia,
+      Dependencies.zioDoobieLiquibase,
       Dependencies.zioMagic,
       // Test
       Dependencies.zioTest % Test,
