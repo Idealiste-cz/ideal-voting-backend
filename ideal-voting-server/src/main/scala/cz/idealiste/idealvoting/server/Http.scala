@@ -40,7 +40,12 @@ class Http(voting: Voting, clock: Clock.Service) {
           (titleMangled, token) <- voting.createElection(createElection, now)
           resp = LinksResponse(
             List(
-              Link(show"/v1/election/admin/$titleMangled/$token", "election-view-admin", GET),
+              Link(
+                show"/v1/election/admin/$titleMangled/$token",
+                "election-view-admin",
+                GET,
+                Map("titleMangled" -> titleMangled, "token" -> token),
+              ),
             ),
           )
           resp <- Created(resp)
@@ -58,11 +63,23 @@ class Http(voting: Voting, clock: Clock.Service) {
               electionView.options.map(o => GetOptionResponse(o.id, o.title, o.description)),
               electionView.voter.email,
               electionView.voter.token,
-              List(Link(show"/v1/election/$titleMangled/$token", "self", GET)) ++ (
+              List(
+                Link(
+                  show"/v1/election/$titleMangled/$token",
+                  "self",
+                  GET,
+                  Map("titleMangled" -> titleMangled, "token" -> token),
+                ),
+              ) ++ (
                 if (electionView.voter.voted) List()
                 else
                   List(
-                    Link(show"/v1/election/$titleMangled/$token", "cast-vote", POST),
+                    Link(
+                      show"/v1/election/$titleMangled/$token",
+                      "cast-vote",
+                      POST,
+                      Map("titleMangled" -> titleMangled, "token" -> token),
+                    ),
                   )
               ),
             )
@@ -88,7 +105,12 @@ class Http(voting: Voting, clock: Clock.Service) {
             case VoteInsertResult.SuccessfullyVoted =>
               val resp = LinksResponse(
                 List(
-                  Link(show"/v1/election/$titleMangled/$token", "election-view", GET),
+                  Link(
+                    show"/v1/election/$titleMangled/$token",
+                    "election-view",
+                    GET,
+                    Map("titleMangled" -> titleMangled, "token" -> token),
+                  ),
                 ),
               )
               Accepted(resp)
@@ -108,7 +130,12 @@ class Http(voting: Voting, clock: Clock.Service) {
               electionViewAdmin.options.map(o => GetOptionResponse(o.id, o.title, o.description)),
               electionViewAdmin.voters.map(v => GetVoterResponse(v.email, v.voted)),
               List(
-                Link(show"/v1/election/admin/$titleMangled/$token", "self", GET),
+                Link(
+                  show"/v1/election/admin/$titleMangled/$token",
+                  "self",
+                  GET,
+                  Map("titleMangled" -> titleMangled, "token" -> token),
+                ),
               ),
             )
           }
@@ -148,7 +175,7 @@ object Http {
   implicit lazy val methodEntityEncoder: EntityEncoder[Task, Method] =
     circeEntityEncoder[Task, Method]
 
-  final case class Link(href: String, rel: String, method: Method)
+  final case class Link(href: String, rel: String, method: Method, parameters: Map[String, String])
 
   object Link {
     implicit lazy val decoder: Decoder[Link] = deriveDecoder[Link]
