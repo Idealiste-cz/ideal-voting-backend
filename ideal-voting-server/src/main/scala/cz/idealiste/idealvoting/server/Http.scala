@@ -7,12 +7,12 @@ import emil.MailAddress
 import emil.javamail.syntax._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
+import org.http4s._
 import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
 import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s._
 import zio._
 import zio.clock.Clock
 import zio.interop.catz._
