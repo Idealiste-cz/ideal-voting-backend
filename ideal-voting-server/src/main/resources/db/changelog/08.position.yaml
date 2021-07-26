@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: position-01
+      author: idealvoting
+      changes:
+        - createTable:
+            tableName: position
+            columns:
+              - column: { name: result_id, type: int, constraints: { references: result (id), foreignKeyName: position result id, nullable: false } }
+  - changeSet:
+      id: position-02
+      author: idealvoting
+      changes:
+        - addColumn:
+            tableName: position
+            columns:
+              - column: { name: ordering, type: int, constraints: { nullable: false } }
+              - column: { name: option_id, type: int, constraints: { nullable: false } }
+  - changeSet:
+      id: position-03
+      author: idealvoting
+      changes:
+        - createIndex:
+            clustered: false
+            columns:
+              - column: { name: result_id }
+              - column: { name: ordering }
+            indexName: idx_position_unique_resultid_ordering
+            tableName: position
+            unique: true
+        - createIndex:
+            clustered: false
+            columns:
+              - column: { name: result_id }
+              - column: { name: option_id }
+            indexName: idx_position_unique_resultid_optionid
+            tableName: position
+            unique: true

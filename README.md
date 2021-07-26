@@ -61,8 +61,8 @@ Example request:
 ```json5
 {
   "preferences": [
-    2,
-    1
+    1,
+    0
   ]
 }
 ```

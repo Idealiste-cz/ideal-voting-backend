@@ -114,7 +114,7 @@ object MainSpec extends DefaultRunnableSpec {
           List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
         )
         val requestCast = CastVoteRequest(List(1, 0))
-        val responseViewAdmin = ZIO.service[Http].flatMap { http =>
+        val responseViewAdmin = ZIO.serviceWith[Http] { http =>
           val httpApp = http.httpApp
           for {
             responseCreate <- httpApp
@@ -139,6 +139,62 @@ object MainSpec extends DefaultRunnableSpec {
                       .find(l => l.method === Method.GET && l.rel === "election-view-admin")
                       .get
                       .href,
+                  ),
+                ),
+              )
+              .flatMap(_.as[GetElectionAdminResponse])
+          } yield responseViewAdmin
+        }
+        assertM(responseViewAdmin)(
+          hasField(
+            "voters",
+            (r: GetElectionAdminResponse) => r.voters.map(r => (r.voter.name, r.voter.address, r.voted)),
+            equalTo(
+              List(
+                (Some("Voter 1"), "voter1@x.com", true),
+                (None, "voter2@y.org", false),
+              ),
+            ),
+          ),
+        )
+      },
+      testM("/election/admin/.../<token> POST should end the election") {
+        val requestCreate = CreateElectionRequest(
+          "election 3",
+          None,
+          email("Admin 1 <admin1@a.net>"),
+          List(CreateOptionRequest("option1", None), CreateOptionRequest("option2", None)),
+          List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
+        )
+        val requestCast = CastVoteRequest(List(1, 0))
+        val responseViewAdmin = ZIO.serviceWith[Http] { http =>
+          val httpApp = http.httpApp
+          for {
+            responseCreate <- httpApp
+              .run(Request(method = Method.POST, uri = uri"/v1/election").withEntity(requestCreate))
+              .flatMap(_.as[LinksResponse])
+            _ <- httpApp
+              .run(
+                Request(method = Method.POST, uri = Uri.unsafeFromString("/v1/election/uri-mangled-xyz/tkpfinzdlw"))
+                  .withEntity(requestCast),
+              )
+              .flatMap(_.as[LinksResponse])
+            _ <- httpApp
+              .run(
+                Request(
+                  method = Method.POST,
+                  uri = Uri.unsafeFromString(
+                    s"/v1/election/admin/uri-mangled-xyz/${responseCreate.links(0).parameters("token")}",
+                  ),
+                ),
+              )
+              .flatMap(_.as[LinksResponse])
+            responseViewAdmin <- httpApp
+              .run(
+                Request(
+                  method = Method.GET,
+                  uri = Uri.unsafeFromString(
+                    responseCreate.links.find(l => l.method === Method.GET && l.rel === "election-view-admin").get.href,
                   ),
                 ),
               )
