@@ -32,7 +32,7 @@ object MainSpec extends DefaultRunnableSpec {
     suite("Service")(
       testM("/status should return OK") {
         val response =
-          ZIO.service[Http].flatMap(_.httpApp.run(Request(method = Method.GET, uri = uri"/v1/status")))
+          ZIO.serviceWith[Http](_.httpApp.run(Request(method = Method.GET, uri = uri"/v1/status")))
         assertM(response.map(_.status))(equalTo(Status.Ok))
       },
       testM("/election POST should create an election") {
@@ -43,7 +43,7 @@ object MainSpec extends DefaultRunnableSpec {
           List(CreateOptionRequest("option1", None), CreateOptionRequest("option2", Some("Option 2"))),
           List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
         )
-        val response = ZIO.service[Http].flatMap { http =>
+        val response = ZIO.serviceWith[Http] { http =>
           val httpApp = http.httpApp
           for {
             response <- httpApp.run(
@@ -167,7 +167,7 @@ object MainSpec extends DefaultRunnableSpec {
           List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
         )
         val requestCast = CastVoteRequest(List(1, 0))
-        val responseViewAdmin = ZIO.serviceWith[Http] { http =>
+        val responseResult = ZIO.serviceWith[Http] { http =>
           val httpApp = http.httpApp
           for {
             responseCreate <- httpApp
@@ -199,20 +199,9 @@ object MainSpec extends DefaultRunnableSpec {
                 ),
               )
               .flatMap(_.as[GetElectionAdminResponse])
-          } yield responseViewAdmin
+          } yield responseViewAdmin.result.map(r => (r.positions, r.votes))
         }
-        assertM(responseViewAdmin)(
-          hasField(
-            "voters",
-            (r: GetElectionAdminResponse) => r.voters.map(r => (r.voter.name, r.voter.address, r.voted)),
-            equalTo(
-              List(
-                (Some("Voter 1"), "voter1@x.com", true),
-                (None, "voter2@y.org", false),
-              ),
-            ),
-          ),
-        )
+        assertM(responseResult)(equalTo(Some((List(1, 0), List(List(1, 0))))))
       },
     ).provideSomeLayerShared[Blocking with Random with System](testLayer.orDie) @@ sequential
 

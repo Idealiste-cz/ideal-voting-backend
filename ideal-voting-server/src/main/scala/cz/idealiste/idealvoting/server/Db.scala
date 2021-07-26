@@ -76,10 +76,10 @@ class Db(transactor: Transactor[Task]) {
               JOIN result ON voter.election_id = result.election_id
               WHERE voter.token = $token""".query[(OffsetDateTime, Int)].option
             result <- endedAndResultId.traverse { case (ended, resultId) =>
-              sql"""SELECT position.option_id
-              FROM position
-              WHERE position.result_id = $resultId
-              ORDER BY position.ordering""".query[Int].to[List].map(Result(ended, _))
+              sql"""SELECT positions.option_id
+              FROM positions
+              WHERE positions.result_id = $resultId
+              ORDER BY positions.ordering""".query[Int].to[List].map(Result(ended, _))
             }
             optionsMap = options.map(o => (o.id, o)).toMap
             votes = votes0
@@ -130,10 +130,10 @@ class Db(transactor: Transactor[Task]) {
               JOIN result ON admin.election_id = result.election_id
               WHERE admin.token = $token""".query[(OffsetDateTime, Int)].option
             result <- endedAndResultId.traverse { case (ended, resultId) =>
-              sql"""SELECT position.option_id
-              FROM position
-              WHERE position.result_id = $resultId
-              ORDER BY position.ordering""".query[Int].to[List].map(Result(ended, _))
+              sql"""SELECT positions.option_id
+              FROM positions
+              WHERE positions.result_id = $resultId
+              ORDER BY positions.ordering""".query[Int].to[List].map(Result(ended, _))
             }
             optionsMap = options.map(o => (o.id, o)).toMap
             votes = votes0
@@ -200,7 +200,7 @@ class Db(transactor: Transactor[Task]) {
               "INSERT INTO result (election_id, ended) VALUES (?, ?)",
             ).withUniqueGeneratedKeys[Int]("id")((electionId, now))
             _ <- Update[(Int, Int, Int)](
-              "INSERT INTO idealvoting.position (result_id, option_id, ordering) VALUES (?, ?, ?)",
+              "INSERT INTO positions (result_id, option_id, ordering) VALUES (?, ?, ?)",
             ).updateMany(positions.zipWithIndex.map { case (optionId, ordering) => (resultId, optionId, ordering) })
           } yield EndElectionResult.SuccessfullyEnded: EndElectionResult
       }
