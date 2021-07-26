@@ -148,12 +148,17 @@ class Http(voting: Voting, clock: Clock.Service) {
                   GET,
                   Map("titleMangled" -> titleMangled, "token" -> token),
                 ),
-                Link(
-                  show"/v1/election/admin/$titleMangled/$token",
-                  "election-end",
-                  POST,
-                  Map("titleMangled" -> titleMangled, "token" -> token),
-                ),
+              ) ++ (
+                if (electionViewAdmin.result.isDefined) List()
+                else
+                  List(
+                    Link(
+                      show"/v1/election/admin/$titleMangled/$token",
+                      "election-end",
+                      POST,
+                      Map("titleMangled" -> titleMangled, "token" -> token),
+                    ),
+                  )
               ),
             )
           }
