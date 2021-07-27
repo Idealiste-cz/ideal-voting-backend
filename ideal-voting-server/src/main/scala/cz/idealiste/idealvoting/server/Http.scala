@@ -17,6 +17,8 @@ import zio._
 import zio.clock.Clock
 import zio.interop.catz._
 
+import java.time.OffsetDateTime
+
 class Http(voting: Voting, clock: Clock.Service) {
 
   private val serviceV1 = {
@@ -40,7 +42,12 @@ class Http(voting: Voting, clock: Clock.Service) {
           (titleMangled, token) <- voting.createElection(createElection, now)
           resp = LinksResponse(
             List(
-              Link(show"/v1/election/admin/$titleMangled/$token", "election-view-admin", GET),
+              Link(
+                show"/v1/election/admin/$titleMangled/$token",
+                "election-view-admin",
+                GET,
+                Map("titleMangled" -> titleMangled, "token" -> token),
+              ),
             ),
           )
           resp <- Created(resp)
@@ -54,22 +61,38 @@ class Http(voting: Voting, clock: Clock.Service) {
               electionView.metadata.title,
               electionView.metadata.titleMangled,
               electionView.metadata.description,
+              electionView.metadata.started,
               electionView.admin.email,
               electionView.options.map(o => GetOptionResponse(o.id, o.title, o.description)),
               electionView.voter.email,
               electionView.voter.token,
-              List(Link(show"/v1/election/$titleMangled/$token", "self", GET)) ++ (
-                if (electionView.voter.voted) List()
+              electionView.result.map(r =>
+                GetResultResponse(r.result.ended, r.result.positions, r.votes.map(_.preferences)),
+              ),
+              List(
+                Link(
+                  show"/v1/election/$titleMangled/$token",
+                  "self",
+                  GET,
+                  Map("titleMangled" -> titleMangled, "token" -> token),
+                ),
+              ) ++ (
+                if (electionView.voter.voted || electionView.result.isDefined) List()
                 else
                   List(
-                    Link(show"/v1/election/$titleMangled/$token", "cast-vote", POST),
+                    Link(
+                      show"/v1/election/$titleMangled/$token",
+                      "cast-vote",
+                      POST,
+                      Map("titleMangled" -> titleMangled, "token" -> token),
+                    ),
                   )
               ),
             )
           }
           resp <- resp match {
             case Some(resp) => Ok(resp)
-            case None       => NotFound()
+            case None       => NotFound(Error("Election not found."))
           }
         } yield resp
       case req @ POST -> Root / "election" / titleMangled / token =>
@@ -77,13 +100,25 @@ class Http(voting: Voting, clock: Clock.Service) {
           req <- req.as[CastVoteRequest]
           result <- voting.castVote(token, req.preferences)
           resp <- result match {
-            case invalidVote: InvalidVote       => BadRequest(invalidVote.message)
-            case VoteInsertResult.AlreadyVoted  => Conflict()
-            case VoteInsertResult.TokenNotFound => NotFound()
+            case InvalidVote.DuplicateOptions(_) =>
+              BadRequest(Error("Vote is invalid, contains duplicate options."))
+            case InvalidVote.UnavailableOptions(_) =>
+              BadRequest(Error("Vote is invalid, contains unavailable options."))
+            case VoteInsertResult.AlreadyVoted =>
+              Conflict(Error("Voter has already voted."))
+            case VoteInsertResult.ElectionEnded =>
+              Conflict(Error("Election has already ended."))
+            case VoteInsertResult.TokenNotFound =>
+              NotFound(Error("Election not found."))
             case VoteInsertResult.SuccessfullyVoted =>
               val resp = LinksResponse(
                 List(
-                  Link(show"/v1/election/$titleMangled/$token", "election-view", GET),
+                  Link(
+                    show"/v1/election/$titleMangled/$token",
+                    "election-view",
+                    GET,
+                    Map("titleMangled" -> titleMangled, "token" -> token),
+                  ),
                 ),
               )
               Accepted(resp)
@@ -98,18 +133,61 @@ class Http(voting: Voting, clock: Clock.Service) {
               electionViewAdmin.metadata.title,
               titleMangled,
               electionViewAdmin.metadata.description,
+              electionViewAdmin.metadata.started,
               electionViewAdmin.admin.email,
               electionViewAdmin.admin.token,
               electionViewAdmin.options.map(o => GetOptionResponse(o.id, o.title, o.description)),
               electionViewAdmin.voters.map(v => GetVoterResponse(v.email, v.voted)),
+              electionViewAdmin.result.map(r =>
+                GetResultResponse(r.result.ended, r.result.positions, r.votes.map(_.preferences)),
+              ),
               List(
-                Link(show"/v1/election/admin/$titleMangled/$token", "self", GET),
+                Link(
+                  show"/v1/election/admin/$titleMangled/$token",
+                  "self",
+                  GET,
+                  Map("titleMangled" -> titleMangled, "token" -> token),
+                ),
+              ) ++ (
+                if (electionViewAdmin.result.isDefined) List()
+                else
+                  List(
+                    Link(
+                      show"/v1/election/admin/$titleMangled/$token",
+                      "election-end",
+                      POST,
+                      Map("titleMangled" -> titleMangled, "token" -> token),
+                    ),
+                  )
               ),
             )
           }
           resp <- resp match {
             case Some(resp) => Ok(resp)
-            case None       => NotFound()
+            case None       => NotFound(Error("Election not found."))
+          }
+        } yield resp
+      case POST -> Root / "election" / "admin" / titleMangled / token =>
+        for {
+          now <- clock.currentDateTime
+          result <- voting.endElection(token, now)
+          resp <- result match {
+            case EndElectionResult.TokenNotFound =>
+              NotFound(Error("Election not found."))
+            case EndElectionResult.ElectionAlreadyEnded =>
+              Conflict(Error("Election has already been ended."))
+            case EndElectionResult.SuccessfullyEnded =>
+              val resp = LinksResponse(
+                List(
+                  Link(
+                    show"/v1/election/admin/$titleMangled/$token",
+                    "election-view-admin",
+                    GET,
+                    Map("titleMangled" -> titleMangled, "token" -> token),
+                  ),
+                ),
+              )
+              Accepted(resp)
           }
         } yield resp
 
@@ -143,7 +221,7 @@ object Http {
   implicit lazy val methodEntityEncoder: EntityEncoder[Task, Method] =
     circeEntityEncoder[Task, Method]
 
-  final case class Link(href: String, rel: String, method: Method)
+  final case class Link(href: String, rel: String, method: Method, parameters: Map[String, String])
 
   object Link {
     implicit lazy val decoder: Decoder[Link] = deriveDecoder[Link]
@@ -208,10 +286,12 @@ object Http {
       title: String,
       titleMangled: String,
       description: Option[String],
+      started: OffsetDateTime,
       admin: MailAddress,
       options: List[GetOptionResponse],
       voter: MailAddress,
       voterToken: String,
+      result: Option[GetResultResponse],
       links: List[Link],
   )
 
@@ -236,14 +316,27 @@ object Http {
       circeEntityDecoder[Task, GetVoterResponse]
   }
 
+  final case class GetResultResponse(ended: OffsetDateTime, positions: List[Int], votes: List[List[Int]])
+
+  object GetResultResponse {
+    implicit lazy val encoder: Encoder[GetResultResponse] = deriveEncoder[GetResultResponse]
+    implicit lazy val entityEncoder: EntityEncoder[Task, GetResultResponse] =
+      circeEntityEncoder[Task, GetResultResponse]
+    implicit lazy val decoder: Decoder[GetResultResponse] = deriveDecoder[GetResultResponse]
+    implicit lazy val entityDecoder: EntityDecoder[Task, GetResultResponse] =
+      circeEntityDecoder[Task, GetResultResponse]
+  }
+
   final case class GetElectionAdminResponse(
       title: String,
       titleMangled: String,
       description: Option[String],
+      started: OffsetDateTime,
       admin: MailAddress,
       adminToken: String,
       options: List[GetOptionResponse],
       voters: List[GetVoterResponse],
+      result: Option[GetResultResponse],
       links: List[Link],
   )
 
@@ -266,6 +359,14 @@ object Http {
     implicit lazy val decoder: Decoder[CastVoteRequest] = deriveDecoder[CastVoteRequest]
     implicit lazy val entityDecoder: EntityDecoder[Task, CastVoteRequest] =
       circeEntityDecoder[Task, CastVoteRequest]
+  }
+
+  final case class Error(error: String)
+  object Error {
+    implicit lazy val encoder: Encoder[Error] = deriveEncoder[Error]
+    implicit lazy val entityEncoder: EntityEncoder[Task, Error] = circeEntityEncoder[Task, Error]
+    implicit lazy val decoder: Decoder[Error] = deriveDecoder[Error]
+    implicit lazy val entityDecoder: EntityDecoder[Task, Error] = circeEntityDecoder[Task, Error]
   }
 
   def make(voting: Voting, clock: Clock.Service): Http = new Http(voting, clock)

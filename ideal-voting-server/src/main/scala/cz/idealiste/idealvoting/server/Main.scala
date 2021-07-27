@@ -5,6 +5,7 @@ import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.doobie.liquibase.ZIODoobieLiquibase
+import zio.logging.Logging
 import zio.logging.slf4j.Slf4jLogger
 import zio.magic._
 import zio.random.Random
@@ -17,20 +18,21 @@ object Main extends App {
 
   def serverLayer(
       args: List[String],
-  ): RLayer[Blocking with Clock with Random with System, Has[Server[Task]]] =
-    ZLayer.fromSomeMagic[Blocking with Clock with Random with System, Has[Server[Task]]](
+  ): RLayer[Blocking with Clock with Random with System, Has[Server]] =
+    ZLayer.fromSomeMagic[Blocking with Clock with Random with System, Has[Server]](
+      Slf4jLogger.make((_, s) => s),
       Config.layer(args),
       httpLayer,
       Config.HttpServer.layer,
       HttpServer.layer,
     )
 
-  lazy val httpLayer: RLayer[Blocking with Clock with Random with Has[Config], Has[Http]] =
-    ZLayer.fromSomeMagic[Blocking with Clock with Random with Has[Config], Has[Http]](
-      Slf4jLogger.make((_, s) => s),
+  lazy val httpLayer: RLayer[Blocking with Clock with Random with Has[Config] with Logging, Has[Http]] =
+    ZLayer.fromSomeMagic[Blocking with Clock with Random with Has[Config] with Logging, Has[Http]](
       Config.DbTransactor.layer,
       ZIODoobieLiquibase.layer,
       Db.layer,
+      VotingSystem.layer,
       Config.Voting.layer,
       Voting.layer,
       Http.layer,

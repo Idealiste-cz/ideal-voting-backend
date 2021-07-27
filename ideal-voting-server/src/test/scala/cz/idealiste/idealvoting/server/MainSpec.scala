@@ -12,6 +12,8 @@ import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.interop.catz._
+import zio.logging.Logging
+import zio.logging.slf4j.Slf4jLogger
 import zio.magic._
 import zio.random.Random
 import zio.system.System
@@ -30,7 +32,7 @@ object MainSpec extends DefaultRunnableSpec {
     suite("Service")(
       testM("/status should return OK") {
         val response =
-          ZIO.service[Http].flatMap(_.httpApp.run(Request(method = Method.GET, uri = uri"/v1/status")))
+          ZIO.serviceWith[Http](_.httpApp.run(Request(method = Method.GET, uri = uri"/v1/status")))
         assertM(response.map(_.status))(equalTo(Status.Ok))
       },
       testM("/election POST should create an election") {
@@ -41,7 +43,7 @@ object MainSpec extends DefaultRunnableSpec {
           List(CreateOptionRequest("option1", None), CreateOptionRequest("option2", Some("Option 2"))),
           List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
         )
-        val response = ZIO.service[Http].flatMap { http =>
+        val response = ZIO.serviceWith[Http] { http =>
           val httpApp = http.httpApp
           for {
             response <- httpApp.run(
@@ -112,7 +114,7 @@ object MainSpec extends DefaultRunnableSpec {
           List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
         )
         val requestCast = CastVoteRequest(List(1, 0))
-        val responseViewAdmin = ZIO.service[Http].flatMap { http =>
+        val responseViewAdmin = ZIO.serviceWith[Http] { http =>
           val httpApp = http.httpApp
           for {
             responseCreate <- httpApp
@@ -156,13 +158,59 @@ object MainSpec extends DefaultRunnableSpec {
           ),
         )
       },
+      testM("/election/admin/.../<token> POST should end the election") {
+        val requestCreate = CreateElectionRequest(
+          "election 3",
+          None,
+          email("Admin 1 <admin1@a.net>"),
+          List(CreateOptionRequest("option1", None), CreateOptionRequest("option2", None)),
+          List(email("Voter 1 <voter1@x.com>"), email("voter2@y.org")),
+        )
+        val requestCast = CastVoteRequest(List(1, 0))
+        val responseResult = ZIO.serviceWith[Http] { http =>
+          val httpApp = http.httpApp
+          for {
+            responseCreate <- httpApp
+              .run(Request(method = Method.POST, uri = uri"/v1/election").withEntity(requestCreate))
+              .flatMap(_.as[LinksResponse])
+            _ <- httpApp
+              .run(
+                Request(method = Method.POST, uri = Uri.unsafeFromString("/v1/election/uri-mangled-xyz/tkpfinzdlw"))
+                  .withEntity(requestCast),
+              )
+              .flatMap(_.as[LinksResponse])
+            _ <- httpApp
+              .run(
+                Request(
+                  method = Method.POST,
+                  uri = Uri.unsafeFromString(
+                    s"/v1/election/admin/uri-mangled-xyz/${responseCreate.links(0).parameters("token")}",
+                  ),
+                ),
+              )
+              .flatMap(_.as[LinksResponse])
+            responseViewAdmin <- httpApp
+              .run(
+                Request(
+                  method = Method.GET,
+                  uri = Uri.unsafeFromString(
+                    responseCreate.links.find(l => l.method === Method.GET && l.rel === "election-view-admin").get.href,
+                  ),
+                ),
+              )
+              .flatMap(_.as[GetElectionAdminResponse])
+          } yield responseViewAdmin.result.map(r => (r.positions, r.votes))
+        }
+        assertM(responseResult)(equalTo(Some((List(1, 0), List(List(1, 0))))))
+      },
     ).provideSomeLayerShared[Blocking with Random with System](testLayer.orDie) @@ sequential
 
-  lazy val testLayerConfig: RLayer[Blocking with System, Has[Config]] =
-    ZLayer.fromSomeMagic[Blocking with System, Has[Config] with Has[DockerComposeContainer]](
+  lazy val testLayerConfig: RLayer[Blocking with System, Has[Config] with Logging] =
+    ZLayer.fromSomeMagic[Blocking with System, Has[Config] with Logging with Has[DockerComposeContainer]](
+      Slf4jLogger.make((_, s) => s),
       Config.layer(List()),
       TestContainer.dockerCompose,
-    ) >>> TestContainer.layer
+    ) >+> TestContainer.layer
 
   lazy val testLayer: RLayer[Blocking with Random with System, Has[Http]] =
     ZLayer.fromSomeMagic[Blocking with Random with System, Has[Http]](
