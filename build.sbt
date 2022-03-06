@@ -65,6 +65,7 @@ lazy val commonSettings: List[Def.Setting[_]] = DecentScala.decentScalaSettings 
   ),
   missinglinkIgnoreDestinationPackages ++= List(
     IgnoredPackage("java.sql"), // https://github.com/tpolecat/doobie/pull/1632
+    IgnoredPackage("org.osgi.framework"),
   ),
   mimaReportBinaryIssues := {},
   // https://github.com/olafurpg/sbt-ci-release/issues/181
