@@ -63,6 +63,9 @@ lazy val commonSettings: List[Def.Setting[_]] = DecentScala.decentScalaSettings 
     moduleFilter(organization = "com.zaxxer", name = "HikariCP"),
     moduleFilter(organization = "org.slf4j", name = "slf4j-api"),
   ),
+  missinglinkIgnoreDestinationPackages ++= List(
+    IgnoredPackage("java.sql"), // https://github.com/tpolecat/doobie/pull/1632
+  ),
   mimaReportBinaryIssues := {},
   // https://github.com/olafurpg/sbt-ci-release/issues/181
   sonatypeCredentialHost := "s01.oss.sonatype.org",
