@@ -8,6 +8,7 @@ servers:
   - url: /api/v1
 components:
   schemas:
+
     CreateElectionRequest:
       type: object
       required: [ title, admin, options, voters ]
