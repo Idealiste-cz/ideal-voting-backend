@@ -41,7 +41,7 @@ class Http(voting: Voting, clock: Clock.Service)(implicit r: Runtime[Has[Blockin
             links = Vector(
               Links(
                 show"/api/v1/election/admin/$titleMangled/$token",
-                "election-view-admin",
+                "getElectionAdmin",
                 Links.Method.Get,
                 Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
               ),
