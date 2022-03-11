@@ -139,9 +139,9 @@ components:
           type: array
           items:
             type: object
-            required: [ votes ]
+            required: [ preferences ]
             properties:
-              votes: { type: array, items: { type: number } }
+              preferences: { type: array, items: { type: number } }
 
 paths:
   /election:

@@ -27,7 +27,8 @@ import java.time.OffsetDateTime
 
 class Http(voting: Voting, clock: Clock.Service)(implicit r: Runtime[Has[Blocking.Service] with Has[Clock.Service]]) {
 
-  private object serviceV1handler extends contract.Handler[Task]() {
+  private object serviceV1handler extends contract.Handler[Task] {
+
     override def createElection(respond: contract.Resource.CreateElectionResponse.type)(
         body: contract.definitions.CreateElectionRequest,
         xCorrelationId: String,
@@ -59,6 +60,25 @@ class Http(voting: Voting, clock: Clock.Service)(implicit r: Runtime[Has[Blockin
         electionViewAdmin <- voting.viewElectionAdmin(token)
         resp = electionViewAdmin.map { electionViewAdmin =>
           val titleMangled = electionViewAdmin.metadata.titleMangled
+          val links = Vector(
+            Links(
+              show"/api/v1/election/admin/$titleMangled/$token",
+              "self",
+              Links.Method.Get,
+              Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
+            ),
+          ) ++ (
+            if (electionViewAdmin.result.isDefined) Vector()
+            else
+              Vector(
+                Links(
+                  show"/api/v1/election/admin/$titleMangled/$token",
+                  "election-end",
+                  Links.Method.Post,
+                  Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
+                ),
+              )
+          )
           contract.definitions.GetElectionAdminResponse(
             electionViewAdmin.metadata.title,
             titleMangled,
@@ -66,30 +86,10 @@ class Http(voting: Voting, clock: Clock.Service)(implicit r: Runtime[Has[Blockin
             electionViewAdmin.metadata.started,
             electionViewAdmin.admin.email.transformInto,
             electionViewAdmin.admin.token,
-            electionViewAdmin.options.map(_.transformInto[contract.definitions.GetOptionResponse]).toVector,
-            electionViewAdmin.voters.map(_.transformInto[contract.definitions.GetVoterResponse]).toVector,
-            electionViewAdmin.result.map(_.transformInto[contract.definitions.GetResultResponse]),
-            contract.definitions.LinksResponse(
-              Vector(
-                Links(
-                  show"/api/v1/election/admin/$titleMangled/$token",
-                  "self",
-                  Links.Method.Get,
-                  Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
-                ),
-              ) ++ (
-                if (electionViewAdmin.result.isDefined) Vector()
-                else
-                  Vector(
-                    Links(
-                      show"/api/v1/election/admin/$titleMangled/$token",
-                      "election-end",
-                      Links.Method.Post,
-                      Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
-                    ),
-                  )
-              ),
-            ),
+            electionViewAdmin.options.transformInto[Vector[contract.definitions.GetOptionResponse]],
+            electionViewAdmin.voters.transformInto[Vector[contract.definitions.GetVoterResponse]],
+            electionViewAdmin.result.transformInto[Option[contract.definitions.GetResultResponse]],
+            contract.definitions.LinksResponse(links),
           )
         }
       } yield resp match {
@@ -286,29 +286,20 @@ object Http {
   }
 
   implicit lazy val validationMailAddress: TransformerF[Validation[+*], String, MailAddress] =
-    string => MailAddress.parseValidated(string).leftMap(_.map(e => TransformationError(e.toString)))
+    string => MailAddress.parseValidated(string).leftMap(_.map(e => TransformationError(e.getMessage)))
 
   implicit lazy val encodingMailAddress: Transformer[MailAddress, String] =
     _.asUnicodeString
 
-  implicit lazy val validationCreateElection
-      : TransformerF[Validation[+*], contract.definitions.CreateElectionRequest, CreateElection] =
-    TransformerF.derive
-
   implicit lazy val encodingInt: Transformer[Int, BigDecimal] =
     BigDecimal.int2bigDecimal(_)
-
-  implicit lazy val encodingBallotOption: Transformer[BallotOption, contract.definitions.GetOptionResponse] =
-    Transformer.derive
-
-  implicit lazy val encodingVoterView: Transformer[VoterView, contract.definitions.GetVoterResponse] =
-    Transformer.derive
 
   implicit lazy val encodingResultView: Transformer[ResultView, contract.definitions.GetResultResponse] =
     Transformer
       .define[ResultView, contract.definitions.GetResultResponse]
       .withFieldComputed(_.ended, _.result.ended)
-      .withFieldComputed(_.positions, _.result.positions.map(_.transformInto[BigDecimal]).toVector)
+      .withFieldComputed(_.positions, _.result.positions.transformInto[Vector[BigDecimal]])
+//      .withFieldComputed(_.votes, _.votes.transformInto[Vector[contract.definitions.GetResultResponse.Votes]])
       .buildTransformer
 
   implicit lazy val emailDecoder: Decoder[MailAddress] = {
