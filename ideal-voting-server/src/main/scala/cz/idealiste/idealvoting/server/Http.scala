@@ -38,16 +38,15 @@ class Http(voting: Voting, clock: Clock.Service)(implicit r: Runtime[Has[Blockin
           for {
             now <- clock.currentDateTime
             (titleMangled, token) <- voting.createElection(body, now)
-            resp = contract.definitions.LinksResponse(
-              Vector(
-                Links(
-                  show"/api/v1/election/admin/$titleMangled/$token",
-                  "election-view-admin",
-                  Links.Method.Get,
-                  Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
-                ),
+            links = Vector(
+              Links(
+                show"/api/v1/election/admin/$titleMangled/$token",
+                "election-view-admin",
+                Links.Method.Get,
+                Vector(Links.Parameters("titleMangled", titleMangled), Links.Parameters("token", token)),
               ),
             )
+            resp = contract.definitions.LinksResponse(links)
           } yield respond.Created(resp)
         case Left(value) =>
           Task.succeed(respond.BadRequest(contract.definitions.BadRequestResponse(value)))
