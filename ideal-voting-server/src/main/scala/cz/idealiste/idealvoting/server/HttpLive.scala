@@ -3,9 +3,9 @@ package cz.idealiste.idealvoting.server
 import cats.data.ValidatedNec
 import cats.implicits._
 import cz.idealiste.idealvoting.contract.definitions.LinksResponse.Links
-import cz.idealiste.idealvoting.{contract, server}
 import cz.idealiste.idealvoting.server.HttpLive._
 import cz.idealiste.idealvoting.server.Voting._
+import cz.idealiste.idealvoting.{contract, server}
 import emil.MailAddress
 import emil.javamail.syntax._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
