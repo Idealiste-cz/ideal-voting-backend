@@ -16,6 +16,6 @@ databaseChangeLog:
                   name: election_id
                   type: int
                   constraints:
-                    references: election (id)
+                    references: election(id)
                     foreignKeyName: votes election id
                     nullable: false

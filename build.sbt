@@ -161,7 +161,7 @@ lazy val idealVotingServer = project
       Dependencies.commonsLang,
       Dependencies.emil,
       Dependencies.jackson,
-      Dependencies.liquibaseSlf4j % "runtime",
+      Dependencies.liquibaseSlf4j % Runtime,
       Dependencies.logback,
       Dependencies.logbackJackson,
       Dependencies.logbackJson,

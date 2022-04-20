@@ -6,7 +6,7 @@ databaseChangeLog:
         - createTable:
             tableName: positions
             columns:
-              - column: { name: result_id, type: int, constraints: { references: result (id), foreignKeyName: positions result id, nullable: false } }
+              - column: { name: result_id, type: int, constraints: { references: result(id), foreignKeyName: positions result id, nullable: false } }
   - changeSet:
       id: positions-02
       author: idealvoting

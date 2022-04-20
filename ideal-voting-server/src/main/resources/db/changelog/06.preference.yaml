@@ -10,7 +10,7 @@ databaseChangeLog:
                   name: vote_id
                   type: int
                   constraints:
-                    references: vote (id)
+                    references: vote(id)
                     foreignKeyName: preferences vote id
                     nullable: false
   - changeSet:
