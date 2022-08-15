@@ -13,7 +13,7 @@ import zio.interop.catz.*
 import zio.logging.backend.SLF4J
 import zio.test.Assertion.*
 import zio.test.TestAspect.*
-import zio.test.{TestEnvironment, _}
+import zio.test.*
 
 object MainSpec extends ZIOSpecDefault {
 
@@ -208,7 +208,7 @@ object MainSpec extends ZIOSpecDefault {
 
   lazy val testLayer: TaskLayer[HttpApp] =
     ZLayer.make[HttpApp](
-      ZLayer.succeedEnvironment(DefaultServices.live) >>> (Live.default ++ Annotations.live) >>> TestClock.default,
+      liveEnvironment.map(_.prune[Clock]),
       TestRandom.deterministic,
       testLayerConfig,
       Main.httpLayer,
