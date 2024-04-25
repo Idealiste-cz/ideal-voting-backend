@@ -111,7 +111,7 @@ lazy val idealVotingServer = project
       Dependencies.circeParser,
       Dependencies.commonsLang,
       Dependencies.emil,
-      Dependencies.http4sServerBlaze,
+      Dependencies.http4sServerEmber,
       Dependencies.jackson,
       Dependencies.liquibaseSlf4j,
       Dependencies.logback,
