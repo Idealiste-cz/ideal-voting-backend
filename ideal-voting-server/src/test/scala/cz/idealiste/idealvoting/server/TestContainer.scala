@@ -17,7 +17,7 @@ object TestContainer {
       .withExposedService("mariadb_1", 3306)
       .withExposedService("mailhog_1", 1025)
       .withExposedService("mailhog_1", 8025)
-      .withLocalCompose(true)
+      .withLocalCompose(false)
   }
 
   private[server] lazy val layer = ZLayer.fromZIO {
