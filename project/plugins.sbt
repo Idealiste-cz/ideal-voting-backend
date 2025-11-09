@@ -6,3 +6,4 @@ libraryDependencies ++= List(
   "org.snakeyaml" % "snakeyaml-engine" % "2.10",
   "dev.guardrail" %% "guardrail-scala-http4s" % "1.0.0-M1",
 )
+addSbtPlugin("com.github.sideeffffect" % "sbt-github-actions-logger" % "1.1.0")
