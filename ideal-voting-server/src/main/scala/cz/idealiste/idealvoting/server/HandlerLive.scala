@@ -409,7 +409,7 @@ object HandlerLive {
     implicit lazy val decoder: Decoder[Error] = deriveDecoder
   }
 
-  private[server] val layer = ZLayer.fromZIO {
+  private val layer = ZLayer.fromZIO {
     for {
       clock <- ZIO.service[Clock]
       voting <- ZIO.service[Voting]
