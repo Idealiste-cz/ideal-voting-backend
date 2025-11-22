@@ -161,6 +161,7 @@ lazy val commonSettings: List[Def.Setting[_]] = DecentScala.decentScalaSettings 
     IgnoredPackage("jnr.unixsocket"),
     IgnoredPackage("org.osgi.framework"),
   ),
+  scalacOptions += "-Wconf:cat=lint-infer-any&msg=kind-polymorphic:s", // https://github.com/scala/bug/issues/13128
 )
 
 lazy val generateOpenApiDocTask: TaskKey[Unit] = TaskKey[Unit]("generateOpenApiDoc")
