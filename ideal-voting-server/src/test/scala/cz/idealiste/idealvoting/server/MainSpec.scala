@@ -1,7 +1,7 @@
 package cz.idealiste.idealvoting.server
 
 import cats.implicits._
-import com.dimafeng.testcontainers.DockerComposeContainer
+import org.testcontainers.containers.ComposeContainer
 import cz.idealiste.idealvoting.server.Config
 import cz.idealiste.idealvoting.server.HandlerLive._
 import emil.MailAddress
@@ -200,7 +200,7 @@ object MainSpec extends ZIOSpecDefault {
     ).provideShared(testLayer.orDie) @@ sequential
 
   lazy val testLayerConfig: TaskLayer[Config] =
-    ZLayer.make[Config & DockerComposeContainer](
+    ZLayer.make[Config & ComposeContainer](
       Runtime.removeDefaultLoggers,
       SLF4J.slf4j,
       Config.layer,
