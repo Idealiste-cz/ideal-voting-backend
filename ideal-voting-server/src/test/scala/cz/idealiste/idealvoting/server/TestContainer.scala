@@ -1,9 +1,9 @@
 package cz.idealiste.idealvoting.server
 
 import cats.implicits._
-import org.testcontainers.containers.ComposeContainer
 import cz.idealiste.idealvoting.server.Config
 import monocle.syntax.all._
+import org.testcontainers.containers.ComposeContainer
 import pprint._
 import zio._
 import zio.testcontainers._
